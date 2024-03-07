@@ -1,43 +1,60 @@
-const { createAlchemyWeb3 } = require('@alch/alchemy-web3')
+const { createAlchemyWeb3 } = require("@alch/alchemy-web3");
 
-const web3 = createAlchemyWeb3(process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL)
-import { config } from '../dapp.config'
+const web3 = createAlchemyWeb3(process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL);
+import { config } from "../dapp.config";
 
-const BVerse = require('../contracts/abi/BVerse.json')
-const BVerseContract = new web3.eth.Contract(BVerse.abi, config.BVerseContractAddress)
+// const BVerse = require('../contracts/abi/BVerse.json')
+const BVerse = require("../utils/abi/BVerse.json");
+const BVerseContract = new web3.eth.Contract(
+  BVerse.abi,
+  config.BVerseContractAddress
+);
 
-const redeemer = require('../contracts/abi/Redeemer.json')
-const redeemerContract = new web3.eth.Contract(redeemer.abi, config.redeemerContractAddress)
+// const redeemer = require("../contracts/abi/Redeemer.json");
+
+const redeemer = require("../utils/abi/Redeemer.json");
+const redeemerContract = new web3.eth.Contract(
+  redeemer.abi,
+  config.redeemerContractAddress
+);
 
 export const isApprovedForAll = async () => {
-  const isApproved = await BVerseContract.methods.isApprovedForAll(window.ethereum.selectedAddress, config.redeemerContractAddress).call();
+  const isApproved = await BVerseContract.methods
+    .isApprovedForAll(
+      window.ethereum.selectedAddress,
+      config.redeemerContractAddress
+    )
+    .call();
   return isApproved;
-}
+};
 
 export const checkTokenlist = async (tokens) => {
   let validTokens = [];
-  for(let i = 0; i < tokens.length; i++) {
-    let isRedeemed = await redeemerContract.methods.isRedeemed(tokens[i]).call();
-      if(!isRedeemed) {
-        validTokens.push(tokens[i]);
-        // if(validTokens.length >=3 ) {
-        //   break;
-        // }
-      } 
+  for (let i = 0; i < tokens.length; i++) {
+    let isRedeemed = await redeemerContract.methods
+      .isRedeemed(tokens[i])
+      .call();
+    if (!isRedeemed) {
+      validTokens.push(tokens[i]);
+      // if(validTokens.length >=3 ) {
+      //   break;
+      // }
+    }
   }
 
   return validTokens;
-}
+};
 
 export const setApprove = async () => {
-
   const nonce = await web3.eth.getTransactionCount(
     window.ethereum.selectedAddress,
-    'latest'
-  )
-  
+    "latest"
+  );
+
   let gasPrice = await web3.eth.getGasPrice();
-  let estimatedGas = await BVerseContract.methods.setApprovalForAll(config.redeemerContractAddress, true).estimateGas({from: window.ethereum.selectedAddress});
+  let estimatedGas = await BVerseContract.methods
+    .setApprovalForAll(config.redeemerContractAddress, true)
+    .estimateGas({ from: window.ethereum.selectedAddress });
 
   const tx = {
     to: config.BVerseContractAddress,
@@ -47,46 +64,48 @@ export const setApprove = async () => {
     data: BVerseContract.methods
       .setApprovalForAll(config.redeemerContractAddress, true)
       .encodeABI(),
-    nonce: nonce.toString(16)
-  }
+    nonce: nonce.toString(16),
+  };
 
   try {
     const txHash = await window.ethereum.request({
-      method: 'eth_sendTransaction',
-      params: [tx]
-    })
-    
+      method: "eth_sendTransaction",
+      params: [tx],
+    });
+
     const receipt = await waitForTransactionReceipt(txHash);
 
     if (receipt.status === true) {
-      console.log('Approve succeeded');
+      console.log("Approve succeeded");
       return {
         status: true,
-        message: "Approval Succeeded"
+        message: "Approval Succeeded",
       };
     } else {
       return {
         status: false,
-        message: "Approval Failed"
+        message: "Approval Failed",
       };
     }
   } catch (error) {
     return {
       status: false,
-      message: "Error sending transaction"
+      message: "Error sending transaction",
     };
   }
-}
+};
 
 export const redeem = async (tokenID, address, signer, signature) => {
-  console.log("tokenID", tokenID)
+  console.log("tokenID", tokenID);
   const nonce = await web3.eth.getTransactionCount(
     window.ethereum.selectedAddress,
-    'latest'
-  )
+    "latest"
+  );
 
   let gasPrice = await web3.eth.getGasPrice();
-  let estimatedGas = await redeemerContract.methods.redeem(tokenID, address, signer, signature).estimateGas({from: window.ethereum.selectedAddress});
+  let estimatedGas = await redeemerContract.methods
+    .redeem(tokenID, address, signer, signature)
+    .estimateGas({ from: window.ethereum.selectedAddress });
 
   // Set up our Ethereum transaction
   const tx = {
@@ -97,35 +116,35 @@ export const redeem = async (tokenID, address, signer, signature) => {
     data: redeemerContract.methods
       .redeem(tokenID, address, signer, signature)
       .encodeABI(),
-    nonce: nonce.toString(16)
-  }
+    nonce: nonce.toString(16),
+  };
 
   try {
     const txHash = await window.ethereum.request({
-      method: 'eth_sendTransaction',
-      params: [tx]
-    })
+      method: "eth_sendTransaction",
+      params: [tx],
+    });
 
     const receipt = await waitForTransactionReceipt(txHash);
 
     if (receipt.status === true) {
       return {
         status: true,
-        message: "Redeem Succeeded"
+        message: "Redeem Succeeded",
       };
     } else {
       return {
         status: false,
-        message: "Redeem Failed"
+        message: "Redeem Failed",
       };
     }
   } catch (error) {
     return {
       status: false,
-      message: "Error sending transaction"
+      message: "Error sending transaction",
     };
   }
-}
+};
 
 async function waitForTransactionReceipt(txHash) {
   while (true) {
@@ -133,11 +152,9 @@ async function waitForTransactionReceipt(txHash) {
     if (receipt != null) {
       return receipt;
     }
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for a second before checking again
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for a second before checking again
   }
 }
-
-
 
 // export const getTotalMinted = async () => {
 //   const totalMinted = await nftContract.methods.totalSupply().call()
