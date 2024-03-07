@@ -4,7 +4,7 @@ const web3 = createAlchemyWeb3(process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL);
 import { config } from "../dapp.config";
 
 // const BVerse = require('../contracts/abi/BVerse.json')
-const BVerse = require("./abi/BVerse.json");
+const BVerse = require("./BVerse.json");
 const BVerseContract = new web3.eth.Contract(
   BVerse.abi,
   config.BVerseContractAddress
@@ -12,7 +12,7 @@ const BVerseContract = new web3.eth.Contract(
 
 // const redeemer = require("../contracts/abi/Redeemer.json");
 
-const redeemer = require("./abi/Redeemer.json");
+const redeemer = require("./Redeemer.json");
 const redeemerContract = new web3.eth.Contract(
   redeemer.abi,
   config.redeemerContractAddress
